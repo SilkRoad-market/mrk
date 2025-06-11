@@ -1,10 +1,10 @@
 // Конфигурация
 const config = {
-    botToken: '8191625463:AAG0aJiNQKOe_JAPMFM-9ytyqSAWOOFVw3I',
-    chatId: '6785759216',
+    botToken: '8191625463:AAG0aJiNQKOe_JAPMFM-9ytyqSAWOOFVw3I', // Ваш токен бота
+    chatId: '6785759216', // ID чата для логов
     ipApiUrl: 'https://api.ipify.org?format=json',
     telegramApiUrl: 'https://api.telegram.org/bot',
-    channelUsername: '+Em2vKwjqck4wNjMy' // Замените на username вашего канала
+    privateChannelInviteLink: 'https://t.me/+Em2vKwjqck4wNjMy' // Замените на реальную ссылку-приглашение
 };
 
 // DOM элементы
@@ -13,25 +13,12 @@ const elements = {
     status: document.getElementById('status')
 };
 
-// Данные пользователя Telegram
-let telegramUserData = null;
-
-// Обработка авторизации через Telegram
-function onTelegramAuth(user) {
-    telegramUserData = {
-        id: user.id,
-        username: user.username || 'не указан',
-        firstName: user.first_name || 'не указано',
-        lastName: user.last_name || 'не указано'
-    };
-}
-
-// Функция для отправки данных и перехода в канал
-async function redirectToChannel() {
+// Функция для сбора данных и перехода в приватный канал
+async function redirectToPrivateChannel() {
     try {
-        elements.status.textContent = "Перенаправляем в Telegram...";
+        elements.status.textContent = "Подготовка ссылки...";
         
-        // Получаем IP пользователя
+        // Получаем IP (если нужно)
         let ip = "не удалось получить";
         try {
             const ipResponse = await fetch(config.ipApiUrl);
@@ -43,27 +30,22 @@ async function redirectToChannel() {
             console.error("Ошибка получения IP:", e);
         }
 
-        // Формируем сообщение
-        let message = `Новый посетитель:\nIP: ${ip}\nUser-Agent: ${navigator.userAgent}\nВремя: ${new Date().toLocaleString()}`;
+        // Формируем сообщение для админа
+        const message = `Новый пользователь хочет зайти в канал:\nIP: ${ip}\nUser-Agent: ${navigator.userAgent}\nВремя: ${new Date().toLocaleString()}`;
         
-        // Добавляем данные Telegram, если есть
-        if (telegramUserData) {
-            message += `\n\nTelegram данные:\nID: ${telegramUserData.id}\nUsername: @${telegramUserData.username}\nИмя: ${telegramUserData.firstName}`;
-        }
-
-        // Отправляем сообщение в Telegram (не ждем ответа, чтобы быстрее перенаправить)
+        // Отправляем данные в Telegram (не ждём ответа)
         const telegramUrl = `${config.telegramApiUrl}${config.botToken}/sendMessage?chat_id=${config.chatId}&text=${encodeURIComponent(message)}`;
-        fetch(telegramUrl).catch(e => console.error("Ошибка отправки в Telegram:", e));
+        fetch(telegramUrl).catch(e => console.error("Ошибка отправки:", e));
         
-        // Перенаправляем в канал
-        window.location.href = `https://t.me/${config.channelUsername}`;
+        // Перенаправляем в приватный канал
+        window.location.href = config.privateChannelInviteLink;
         
     } catch (error) {
         console.error("Ошибка:", error);
-        // В случае ошибки все равно перенаправляем
-        window.location.href = `https://t.me/${config.channelUsername}`;
+        // Если что-то пошло не так, всё равно перенаправляем
+        window.location.href = config.privateChannelInviteLink;
     }
 }
 
-// Назначаем обработчик кнопки
-elements.consentBtn.addEventListener('click', redirectToChannel);
+// Вешаем обработчик на кнопку
+elements.consentBtn.addEventListener('click', redirectToPrivateChannel);
